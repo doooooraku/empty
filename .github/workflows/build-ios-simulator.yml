@@ -1,0 +1,51 @@
+name: Build iOS (Simulator)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build for iOS Simulator
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Prebuild iOS
+        run: pnpm prebuild:ios
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+
+      - name: Build iOS App
+        run: |
+          cd ios
+          xcodebuild \
+            -workspace empty-rn-app.xcworkspace \
+            -scheme empty-rn-app \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-simulator
+          path: ios/build/Build/Products/Debug-iphonesimulator/*.app
